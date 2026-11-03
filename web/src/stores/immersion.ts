@@ -33,6 +33,7 @@ export const useImmersionStore = defineStore('immersion', () => {
   }
 
   async function restart(wordbook: string) {
+    if (submitting.value) return
     submitting.value = true
     try {
       progress.value = await resetImmersion(wordbook)

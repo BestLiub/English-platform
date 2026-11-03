@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import type { PlanItem } from '@/stores/study'
+// 计划模式和沉浸模式共用这张卡：沉浸词没有 is_new，
+// 只有 showBadge 打开时才会读它，所以做成可选。
+interface WordCardItem {
+  word_id: number
+  word: string
+  phonetic: string | null
+  translation: string | null
+  is_new?: boolean
+}
 
 // showBadge / showRatingHint 供沉浸模式关掉新词标签和评分提示，默认保持计划模式原样
 const props = withDefaults(
   defineProps<{
-    item: PlanItem | null
+    item: WordCardItem | null
     revealed: boolean
     showBadge?: boolean
     showRatingHint?: boolean
