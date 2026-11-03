@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { get } from '@/api/client'
 import { useStudyStore } from '@/stores/study'
 import { useSettingsStore } from '@/stores/settings'
@@ -11,7 +10,6 @@ interface Wordbook {
   count: number
 }
 
-const router = useRouter()
 const study = useStudyStore()
 const settings = useSettingsStore()
 
@@ -25,7 +23,28 @@ const today = new Date().toLocaleDateString('zh-CN', {
 
 const reviewCount = computed(() => study.plan.reviews.length)
 const newCount = computed(() => study.plan.new_words.length)
-const hasWork = computed(() => reviewCount.value + newCount.value > 0)
+
+/** 三个入口。副标题写清楚进去以后能做什么，而不只是四个字的标题 */
+const entries = computed(() => [
+  {
+    to: '/study',
+    kicker: 'Study',
+    title: '背单词',
+    subtitle: `待复习 ${reviewCount.value} · 新词 ${newCount.value}`
+  },
+  {
+    to: '/library',
+    kicker: 'Reading',
+    title: '读文章',
+    subtitle: '导入 PDF / EPUB / 网页，划词查义'
+  },
+  {
+    to: '/profile',
+    kicker: 'Profile',
+    title: '个人',
+    subtitle: '学习统计与设置'
+  }
+])
 
 onMounted(async () => {
   await study.loadPlan({
@@ -39,10 +58,6 @@ onMounted(async () => {
     /* 词库没导入时首页仍然可用 */
   }
 })
-
-function start() {
-  router.push('/study')
-}
 </script>
 
 <template>
@@ -69,25 +84,38 @@ function start() {
       </template>
     </el-alert>
 
-    <div class="grid grid-cols-2 gap-4">
-      <div class="rounded-xl border bg-white p-6">
-        <div class="text-xs text-gray-400">待复习</div>
-        <div class="mt-2 font-serif text-4xl text-gray-900">{{ reviewCount }}</div>
-      </div>
-      <div class="rounded-xl border bg-white p-6">
-        <div class="text-xs text-gray-400">今日新词</div>
-        <div class="mt-2 font-serif text-4xl text-gray-900">{{ newCount }}</div>
-      </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <router-link
+        v-for="entry in entries"
+        :key="entry.to"
+        :to="entry.to"
+        class="group flex min-h-44 flex-col justify-between rounded-xl border bg-white p-6 transition-colors hover:border-gray-400"
+      >
+        <div class="flex items-start justify-between">
+          <span class="text-xs uppercase tracking-[0.18em] text-gray-400">{{ entry.kicker }}</span>
+          <span
+            aria-hidden="true"
+            class="text-gray-300 transition-transform duration-200 group-hover:translate-x-0.5"
+          >
+            →
+          </span>
+        </div>
+
+        <div class="mt-10">
+          <h2 class="font-serif text-2xl text-gray-900">{{ entry.title }}</h2>
+          <p class="mt-2 text-sm leading-relaxed text-gray-500">{{ entry.subtitle }}</p>
+        </div>
+      </router-link>
     </div>
 
-    <div class="mt-4 flex items-center justify-between rounded-xl border bg-white p-6">
-      <div>
+    <div class="mt-4 flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4">
+      <div class="min-w-0">
         <div class="text-sm font-medium text-gray-900">当前词库</div>
         <div class="mt-1 text-xs text-gray-400">
           {{ wordbooks.find((w) => w.key === settings.activeWordbook)?.count?.toLocaleString() ?? '—' }} 个词
         </div>
       </div>
-      <el-select v-model="settings.activeWordbook" placeholder="选择词库" class="w-40">
+      <el-select v-model="settings.activeWordbook" placeholder="选择词库" class="w-40 shrink-0">
         <el-option
           v-for="item in wordbooks"
           :key="item.key"
@@ -96,13 +124,5 @@ function start() {
         />
       </el-select>
     </div>
-
-    <button
-      class="mt-8 flex w-full items-center justify-center rounded-xl bg-gray-900 px-6 py-4 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
-      :disabled="!hasWork"
-      @click="start"
-    >
-      {{ hasWork ? '开始今天的学习' : '今天没有待办，去导入一篇文章吧' }}
-    </button>
   </div>
 </template>
