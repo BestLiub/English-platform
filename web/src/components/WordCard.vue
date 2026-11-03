@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import type { PlanItem } from '@/stores/study'
 
-const props = defineProps<{
-  item: PlanItem | null
-  revealed: boolean
-}>()
+// showBadge / showRatingHint 供沉浸模式关掉新词标签和评分提示，默认保持计划模式原样
+const props = withDefaults(
+  defineProps<{
+    item: PlanItem | null
+    revealed: boolean
+    showBadge?: boolean
+    showRatingHint?: boolean
+  }>(),
+  { showBadge: true, showRatingHint: true }
+)
 
 const emit = defineEmits<{ flip: [] }>()
 
@@ -35,7 +41,7 @@ function speak(event: Event) {
       <div
         class="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border bg-white px-10 [backface-visibility:hidden]"
       >
-        <div class="absolute left-6 top-6">
+        <div v-if="showBadge" class="absolute left-6 top-6">
           <span
             class="rounded-full px-2.5 py-1 text-[11px] tracking-wide"
             :class="item.is_new ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'"
@@ -77,7 +83,7 @@ function speak(event: Event) {
           {{ item.translation || '这个词库里暂时没有释义' }}
         </div>
 
-        <div class="mt-4 text-xs text-gray-300">
+        <div v-if="showRatingHint" class="mt-4 text-xs text-gray-300">
           1 不认识 · 2 记忆模糊
         </div>
       </div>
