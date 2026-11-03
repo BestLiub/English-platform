@@ -1,0 +1,38 @@
+{
+  "name": "english-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "本地优先的英语学习工具：背单词 / 精读 / 模考",
+  "bin": {
+    "english": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "web/dist",
+    "api/app",
+    "api/pyproject.toml",
+    "scripts"
+  ],
+  "scripts": {
+    "postinstall": "npm --prefix web install",
+    "prepare": "tsup",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "uv --directory api run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:web": "npm --prefix web run dev",
+    "build": "npm run build:web && npm run build:launcher",
+    "build:web": "npm --prefix web run build",
+    "build:launcher": "tsup",
+    "seed": "uv --directory api run python ../scripts/import_ecdict.py",
+    "typecheck": "npm --prefix web run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "concurrently": "^9.1.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,24 @@
+# 依赖
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 构建产物
+dist/
+web/dist/
+
+# 本地数据（绝对不要提交）
+data/
+*.db
+*.sqlite3
+.env
+.env.local
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
