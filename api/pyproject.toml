@@ -21,3 +21,13 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+# tests/ 里没有 __init__.py，pytest 默认只会把 tests/ 加进 sys.path，
+# 这里把 api/ 也加进去，测试才能 import app 包
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
