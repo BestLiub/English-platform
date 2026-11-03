@@ -126,7 +126,9 @@ def main() -> None:
     init_db()
 
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("PRAGMA journal_mode=WAL")
+    # 单人本地应用用不上 WAL 的并发能力，反而会留下 -wal/-shm 两个附属文件：
+    # 多个进程交替打开时，短命连接退出会截断 WAL，让长连接读到损坏的共享内存索引。
+    conn.execute("PRAGMA journal_mode=DELETE")
     conn.execute("PRAGMA synchronous=OFF")
 
     existing = {row[0] for row in conn.execute("SELECT word FROM word")}
