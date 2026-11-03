@@ -1,6 +1,6 @@
 {
   "name": "english-app",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "本地优先的英语学习工具：背单词 / 精读 / 模考",
