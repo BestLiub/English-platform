@@ -45,11 +45,15 @@ export const useStudyStore = defineStore('study', () => {
     total.value ? Math.round((index.value / total.value) * 100) : 0
   )
 
-  async function loadPlan(params?: { wordbook?: string; new_limit?: number }) {
+  async function loadPlan(params?: { wordbook?: string; new_limit?: number; reviewLimit?: number }) {
     loading.value = true
     error.value = null
     try {
-      plan.value = await get<StudyPlan>('/study/plan', params)
+      plan.value = await get<StudyPlan>('/study/plan', {
+        wordbook: params?.wordbook,
+        new_limit: params?.new_limit,
+        review_limit: params?.reviewLimit
+      })
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -58,13 +62,14 @@ export const useStudyStore = defineStore('study', () => {
   }
 
   /** 拉一份新计划并开始学习；重复进入时不会叠加旧队列 */
-  async function startSession(opts: { wordbook: string; newLimit: number }) {
+  async function startSession(opts: { wordbook: string; newLimit: number; reviewLimit: number }) {
     loading.value = true
     error.value = null
     try {
       plan.value = await get<StudyPlan>('/study/plan', {
         wordbook: opts.wordbook,
-        new_limit: opts.newLimit
+        new_limit: opts.newLimit,
+        review_limit: opts.reviewLimit
       })
       queue.value = [...plan.value.reviews, ...plan.value.new_words]
       index.value = 0

@@ -8,6 +8,7 @@ export type AnnotationStrategy = 'beyond' | 'unmastered' | 'all'
 
 export const useSettingsStore = defineStore('settings', () => {
   const dailyNewWords = ref(20)
+  const dailyReviewLimit = ref(100)
   const activeWordbook = ref('cet4')
   const annotationStrategy = ref<AnnotationStrategy>('beyond')
 
@@ -16,6 +17,7 @@ export const useSettingsStore = defineStore('settings', () => {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (typeof parsed.dailyNewWords === 'number') dailyNewWords.value = parsed.dailyNewWords
+      if (typeof parsed.dailyReviewLimit === 'number') dailyReviewLimit.value = parsed.dailyReviewLimit
       if (typeof parsed.activeWordbook === 'string') activeWordbook.value = parsed.activeWordbook
       if (['beyond', 'unmastered', 'all'].includes(parsed.annotationStrategy)) {
         annotationStrategy.value = parsed.annotationStrategy
@@ -26,12 +28,13 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   watch(
-    [dailyNewWords, activeWordbook, annotationStrategy],
+    [dailyNewWords, dailyReviewLimit, activeWordbook, annotationStrategy],
     () => {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
           dailyNewWords: dailyNewWords.value,
+          dailyReviewLimit: dailyReviewLimit.value,
           activeWordbook: activeWordbook.value,
           annotationStrategy: annotationStrategy.value
         })
@@ -40,5 +43,5 @@ export const useSettingsStore = defineStore('settings', () => {
     { deep: true }
   )
 
-  return { dailyNewWords, activeWordbook, annotationStrategy }
+  return { dailyNewWords, dailyReviewLimit, activeWordbook, annotationStrategy }
 })

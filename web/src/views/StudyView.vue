@@ -17,7 +17,11 @@ const reviewCount = computed(() => study.plan.reviews.length)
 const newCount = computed(() => study.plan.new_words.length)
 
 function startNew() {
-  study.startSession({ wordbook: settings.activeWordbook, newLimit: settings.dailyNewWords })
+  study.startSession({
+    wordbook: settings.activeWordbook,
+    newLimit: settings.dailyNewWords,
+    reviewLimit: settings.dailyReviewLimit
+  })
 }
 
 function flip() {

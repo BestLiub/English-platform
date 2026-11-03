@@ -30,7 +30,8 @@ const hasWork = computed(() => reviewCount.value + newCount.value > 0)
 onMounted(async () => {
   await study.loadPlan({
     wordbook: settings.activeWordbook,
-    new_limit: settings.dailyNewWords
+    new_limit: settings.dailyNewWords,
+    reviewLimit: settings.dailyReviewLimit
   })
   try {
     wordbooks.value = await get<Wordbook[]>('/wordbooks')
