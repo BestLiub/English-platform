@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import StudyTabs from '@/components/StudyTabs.vue'
 import WordCard from '@/components/WordCard.vue'
 import { useImmersionStore } from '@/stores/immersion'
@@ -34,7 +35,7 @@ function reveal() {
 async function skip() {
   if (!immersion.word || revealed.value || immersion.loading || immersion.submitting) return
   try {
-    await immersion.skip(settings.activeWordbook)
+    await immersion.skip()
   } catch {
     /* 拦截器已提示；停在当前卡片，用户可以重试 */
   }
@@ -48,8 +49,18 @@ async function advance() {
 
 async function restart() {
   if (immersion.submitting) return
+  const book = immersion.currentBook || settings.activeWordbook
   try {
-    await immersion.restart(settings.activeWordbook)
+    await ElMessageBox.confirm(
+      `将清空「${book}」词库的沉浸进度，清空后无法恢复。`,
+      '重新开始',
+      { confirmButtonText: '清空并重新开始', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return  // 用户取消
+  }
+  try {
+    await immersion.restart()
     revealed.value = false
   } catch {
     /* 拦截器已提示 */
@@ -58,7 +69,7 @@ async function restart() {
 
 function onKeydown(event: KeyboardEvent) {
   const target = event.target as HTMLElement | null
-  if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+  if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return
   if (immersion.finished || immersion.loading || immersion.submitting || !immersion.word) return
 
   // 空格只负责翻面，避免按住时连着翻过下一张
@@ -86,8 +97,12 @@ function onKeydown(event: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
+  // 在别处切换了词库：旧卡片和旧进度都不再属于当前词库，清掉后按新词库重抽
+  if (immersion.currentBook && immersion.currentBook !== settings.activeWordbook) {
+    immersion.resetLocalState()
+  }
   // 从别的页面切回来时保留当前卡片，只有还没有词时才抽第一张
-  if (!immersion.word) void drawNext()
+  if (!immersion.loading && !immersion.submitting && !immersion.word) void drawNext()
 })
 
 onUnmounted(() => {

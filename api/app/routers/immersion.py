@@ -41,7 +41,7 @@ def next_word(payload: NextRequest, db: Session = Depends(get_db)) -> dict:
 def skip(payload: SkipRequest, db: Session = Depends(get_db)) -> dict:
     if db.get(Word, payload.word_id) is None:
         raise HTTPException(status_code=404, detail="词条不存在")
-    immersion.mark_mastered(db, payload.word_id, USER_ID)
+    immersion.mark_mastered(db, payload.word_id, payload.wordbook, USER_ID)
     return {"code": 0, "message": "ok", "data": immersion.progress(db, payload.wordbook, USER_ID)}
 
 
@@ -52,5 +52,5 @@ def reset(payload: ResetRequest, db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/stats")
-def stats(wordbook: str = Query("cet4"), db: Session = Depends(get_db)) -> dict:
+def stats(wordbook: str = Query(..., min_length=1), db: Session = Depends(get_db)) -> dict:
     return {"code": 0, "message": "ok", "data": immersion.progress(db, wordbook, USER_ID)}

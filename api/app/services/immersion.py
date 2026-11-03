@@ -14,9 +14,11 @@ def _book_filter(wordbook: str):
     return Word.tag.like(f"%{wordbook}%")
 
 
-def _mastered_ids(user_id: int):
+def _mastered_ids(user_id: int, wordbook: str):
+    """只在同一个词库里算掌握：cet6 跳过不会让 cet4 里同名词条消失。"""
     return select(ImmersionWord.word_id).where(
         ImmersionWord.user_id == user_id,
+        ImmersionWord.wordbook == wordbook,
         ImmersionWord.status == "mastered",
     )
 
@@ -26,7 +28,7 @@ def candidate_count(db: Session, wordbook: str, user_id: int = 1) -> int:
         db.scalar(
             select(func.count())
             .select_from(Word)
-            .where(_book_filter(wordbook), Word.id.not_in(_mastered_ids(user_id)))
+            .where(_book_filter(wordbook), Word.id.not_in(_mastered_ids(user_id, wordbook)))
         )
         or 0
     )
@@ -42,19 +44,20 @@ def draw(db: Session, wordbook: str, user_id: int = 1) -> Word | None:
     if remaining == 0:
         return None
 
-    base = select(Word).where(_book_filter(wordbook), Word.id.not_in(_mastered_ids(user_id)))
+    base = select(Word).where(
+        _book_filter(wordbook), Word.id.not_in(_mastered_ids(user_id, wordbook))
+    )
 
     window = repeat_window(remaining)
     word = None
     if window:
-        # 只算当前词库里还没掌握的词，别的词库和已掌握的行不占窗口名额
+        # 只数当前词库的记录；别的词库的记录不占窗口名额
         recent = (
             select(ImmersionWord.word_id)
-            .join(Word, Word.id == ImmersionWord.word_id)
             .where(
                 ImmersionWord.user_id == user_id,
+                ImmersionWord.wordbook == wordbook,
                 ImmersionWord.status != "mastered",
-                _book_filter(wordbook),
             )
             .order_by(ImmersionWord.last_seen_at.desc())
             .limit(window)
@@ -67,32 +70,51 @@ def draw(db: Session, wordbook: str, user_id: int = 1) -> Word | None:
     if word is None:
         return None
 
-    _touch(db, word.id, user_id)
+    _touch(db, word.id, wordbook, user_id)
     return word
 
 
-def _touch(db: Session, word_id: int, user_id: int = 1) -> None:
+def _touch(db: Session, word_id: int, wordbook: str, user_id: int = 1) -> None:
     row = db.scalar(
         select(ImmersionWord).where(
-            ImmersionWord.user_id == user_id, ImmersionWord.word_id == word_id
+            ImmersionWord.user_id == user_id,
+            ImmersionWord.wordbook == wordbook,
+            ImmersionWord.word_id == word_id,
         )
     )
     if row is None:
-        db.add(ImmersionWord(user_id=user_id, word_id=word_id, status="seen", last_seen_at=utcnow()))
+        db.add(
+            ImmersionWord(
+                user_id=user_id,
+                wordbook=wordbook,
+                word_id=word_id,
+                status="seen",
+                last_seen_at=utcnow(),
+            )
+        )
     else:
         row.last_seen_at = utcnow()
     db.commit()
 
 
-def mark_mastered(db: Session, word_id: int, user_id: int = 1) -> None:
-    """用户点了跳过：已出现过的行改成 mastered，没出现过的直接建一行。"""
+def mark_mastered(db: Session, word_id: int, wordbook: str, user_id: int = 1) -> None:
+    """用户点了跳过：当前词库里已出现过的行改成 mastered，没出现过的直接建一行。"""
     row = db.scalar(
         select(ImmersionWord).where(
-            ImmersionWord.user_id == user_id, ImmersionWord.word_id == word_id
+            ImmersionWord.user_id == user_id,
+            ImmersionWord.wordbook == wordbook,
+            ImmersionWord.word_id == word_id,
         )
     )
     if row is None:
-        db.add(ImmersionWord(user_id=user_id, word_id=word_id, status="mastered"))
+        db.add(
+            ImmersionWord(
+                user_id=user_id,
+                wordbook=wordbook,
+                word_id=word_id,
+                status="mastered",
+            )
+        )
     else:
         row.status = "mastered"
     db.commit()
@@ -107,11 +129,10 @@ def progress(db: Session, wordbook: str, user_id: int = 1) -> dict:
         db.scalar(
             select(func.count())
             .select_from(ImmersionWord)
-            .join(Word, Word.id == ImmersionWord.word_id)
             .where(
                 ImmersionWord.user_id == user_id,
+                ImmersionWord.wordbook == wordbook,
                 ImmersionWord.status == "mastered",
-                _book_filter(wordbook),
             )
         )
         or 0
@@ -121,10 +142,10 @@ def progress(db: Session, wordbook: str, user_id: int = 1) -> dict:
 
 def reset(db: Session, wordbook: str, user_id: int = 1) -> int:
     """清空当前词库的沉浸记录（mastered 和 seen 都删），返回删除的行数。"""
-    book_ids = select(Word.id).where(_book_filter(wordbook))
     result = db.execute(
         delete(ImmersionWord).where(
-            ImmersionWord.user_id == user_id, ImmersionWord.word_id.in_(book_ids)
+            ImmersionWord.user_id == user_id,
+            ImmersionWord.wordbook == wordbook,
         )
     )
     db.commit()
