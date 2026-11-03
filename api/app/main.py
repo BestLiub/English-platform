@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import LOG_DIR, WEB_DIST
 from .db import init_db
-from .routers import documents, health, study, wordbooks
+from .routers import documents, health, immersion, study, wordbooks
 from .routers import dict as dict_router
 
 logging.basicConfig(
@@ -62,6 +62,7 @@ app.include_router(wordbooks.router, prefix="/api")
 app.include_router(study.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(dict_router.router, prefix="/api")
+app.include_router(immersion.router, prefix="/api")
 
 # 注意：catch-all 必须最后注册，否则会把 /api 也吃掉
 if WEB_DIST.exists():
