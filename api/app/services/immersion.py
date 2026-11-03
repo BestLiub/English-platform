@@ -1,7 +1,7 @@
 """沉浸模式：随机抽词，与 FSRS 完全隔离。"""
 from __future__ import annotations
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from ..models import ImmersionWord, Word
@@ -82,3 +82,50 @@ def _touch(db: Session, word_id: int, user_id: int = 1) -> None:
     else:
         row.last_seen_at = utcnow()
     db.commit()
+
+
+def mark_mastered(db: Session, word_id: int, user_id: int = 1) -> None:
+    """用户点了跳过：已出现过的行改成 mastered，没出现过的直接建一行。"""
+    row = db.scalar(
+        select(ImmersionWord).where(
+            ImmersionWord.user_id == user_id, ImmersionWord.word_id == word_id
+        )
+    )
+    if row is None:
+        db.add(ImmersionWord(user_id=user_id, word_id=word_id, status="mastered"))
+    else:
+        row.status = "mastered"
+    db.commit()
+
+
+def progress(db: Session, wordbook: str, user_id: int = 1) -> dict:
+    """当前词库的总数、已掌握数、剩余数。"""
+    total = int(
+        db.scalar(select(func.count()).select_from(Word).where(_book_filter(wordbook))) or 0
+    )
+    mastered = int(
+        db.scalar(
+            select(func.count())
+            .select_from(ImmersionWord)
+            .join(Word, Word.id == ImmersionWord.word_id)
+            .where(
+                ImmersionWord.user_id == user_id,
+                ImmersionWord.status == "mastered",
+                _book_filter(wordbook),
+            )
+        )
+        or 0
+    )
+    return {"total": total, "mastered": mastered, "remaining": total - mastered}
+
+
+def reset(db: Session, wordbook: str, user_id: int = 1) -> int:
+    """清空当前词库的沉浸记录（mastered 和 seen 都删），返回删除的行数。"""
+    book_ids = select(Word.id).where(_book_filter(wordbook))
+    result = db.execute(
+        delete(ImmersionWord).where(
+            ImmersionWord.user_id == user_id, ImmersionWord.word_id.in_(book_ids)
+        )
+    )
+    db.commit()
+    return int(result.rowcount or 0)

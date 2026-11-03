@@ -110,3 +110,36 @@ def test_draw_gives_up_the_window_rather_than_getting_stuck(db, seed_words, monk
     monkeypatch.setattr(immersion, "repeat_window", lambda count: count)
     drawn = {immersion.draw(db, "cet6").word for _ in range(20)}
     assert drawn == {"grape", "honey"}
+
+
+def test_skip_marks_mastered_and_updates_progress(db, seed_words):
+    immersion.mark_mastered(db, seed_words["grape"])
+    state = immersion.progress(db, "cet6")
+    assert state == {"total": 3, "mastered": 1, "remaining": 2}
+
+
+def test_reset_only_clears_the_requested_book(db, seed_words):
+    immersion.mark_mastered(db, seed_words["grape"])   # cet6
+    immersion.mark_mastered(db, seed_words["apple"])   # cet4
+    immersion.reset(db, "cet6")
+    assert immersion.progress(db, "cet6")["mastered"] == 0
+    assert immersion.progress(db, "cet4")["mastered"] == 1
+
+
+def test_reset_clears_seen_rows_too(db, seed_words):
+    immersion.draw(db, "cet6")                          # 产生 seen 行
+    removed = immersion.reset(db, "cet6")
+    assert immersion.candidate_count(db, "cet6") == 3
+    assert removed == 1                                 # 删掉的正是那条 seen 行
+    assert db.scalars(select(ImmersionWord)).all() == []
+
+
+def test_mark_mastered_updates_an_existing_seen_row(db, seed_words):
+    """先抽到、再点跳过：已有的 seen 行要原地改成 mastered，不能留下 seen 状态。"""
+    word = immersion.draw(db, "cet6")
+    assert word is not None
+    immersion.mark_mastered(db, word.id)
+    rows = db.scalars(select(ImmersionWord).where(ImmersionWord.word_id == word.id)).all()
+    assert len(rows) == 1
+    assert rows[0].status == "mastered"
+    assert immersion.progress(db, "cet6")["mastered"] == 1
