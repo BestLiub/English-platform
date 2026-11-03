@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import StudyTabs from '@/components/StudyTabs.vue'
 import WordCard from '@/components/WordCard.vue'
 import { OUTCOME_LABELS, useStudyStore, type Outcome } from '@/stores/study'
 import { useSettingsStore } from '@/stores/settings'
@@ -17,7 +18,11 @@ const reviewCount = computed(() => study.plan.reviews.length)
 const newCount = computed(() => study.plan.new_words.length)
 
 function startNew() {
-  study.startSession({ wordbook: settings.activeWordbook, newLimit: settings.dailyNewWords })
+  study.startSession({
+    wordbook: settings.activeWordbook,
+    newLimit: settings.dailyNewWords,
+    reviewLimit: settings.dailyReviewLimit
+  })
 }
 
 function flip() {
@@ -78,6 +83,8 @@ onUnmounted(() => {
         {{ completed }} / {{ study.total }}
       </div>
     </header>
+
+    <StudyTabs />
 
     <div
       v-if="study.started && !study.finished"

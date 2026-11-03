@@ -174,3 +174,22 @@ class ReadingSession(Base):
     started_at: Mapped[datetime] = mapped_column(default=utcnow)
     ended_at: Mapped[datetime | None] = mapped_column(default=None)
     last_paragraph_idx: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class ImmersionWord(Base):
+    """沉浸模式的词状态，与 user_word 完全隔离。"""
+
+    __tablename__ = "immersion_word"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+    # 掌握状态按词库隔离：同一个词可以同时在 cet4 和 cet6，互不影响
+    wordbook: Mapped[str] = mapped_column(String(16), index=True)
+    word_id: Mapped[int] = mapped_column(ForeignKey("word.id", ondelete="CASCADE"), index=True)
+    # seen = 出现过、未掌握；mastered = 用户点了跳过
+    status: Mapped[str] = mapped_column(String(16), default="seen", server_default="seen")
+    last_seen_at: Mapped[datetime] = mapped_column(default=utcnow, index=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "wordbook", "word_id", name="uq_immersion_word"),
+    )

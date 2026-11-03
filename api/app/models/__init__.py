@@ -1,5 +1,6 @@
 from .tables import (
     Document,
+    ImmersionWord,
     Paragraph,
     ReadingSession,
     ReviewLog,
@@ -20,4 +21,5 @@ __all__ = [
     "Document",
     "Paragraph",
     "ReadingSession",
+    "ImmersionWord",
 ]

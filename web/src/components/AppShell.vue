@@ -5,14 +5,17 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const items = [
-  { name: 'home', path: '/', label: '今日', icon: 'Sunrise' },
+  { name: 'home', path: '/', label: '首页', icon: 'HomeFilled' },
   { name: 'study', path: '/study', label: '背单词', icon: 'Collection' },
   { name: 'library', path: '/library', label: '精读', icon: 'Reading' },
-  { name: 'stats', path: '/stats', label: '统计', icon: 'DataLine' },
-  { name: 'settings', path: '/settings', label: '设置', icon: 'Setting' }
+  { name: 'profile', path: '/profile', label: '个人', icon: 'User' }
 ]
 
-const activeName = computed(() => (route.name === 'reader' ? 'library' : (route.name as string)))
+const activeName = computed(() => {
+  if (route.name === 'reader') return 'library'
+  if (route.name === 'immersion') return 'study'
+  return route.name as string
+})
 </script>
 
 <template>

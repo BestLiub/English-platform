@@ -31,6 +31,7 @@ def _to_item(word: Word, is_new: bool) -> dict:
 def get_plan(
     wordbook: str = Query("cet4", description="词库 key，对应 ECDICT 的 tag"),
     new_limit: int = Query(20, ge=0, le=200),
+    review_limit: int = Query(100, ge=0, le=1000, description="今日最多出多少张复习卡"),
     db: Session = Depends(get_db),
 ) -> dict:
     """今日队列：到期的复习卡优先，新词按上限补足。"""
@@ -44,7 +45,7 @@ def get_plan(
             UserWord.status != "known",
         )
         .order_by(UserWord.due)
-        .limit(200)
+        .limit(review_limit)
     ).all()
 
     reviews: list[dict] = []

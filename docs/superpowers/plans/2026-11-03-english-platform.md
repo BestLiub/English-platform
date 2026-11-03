@@ -591,13 +591,21 @@ app.include_router(immersion.router, prefix="/api")
 
 - [ ] **Step 4: 手工验证接口**
 
+用临时数据目录，不要在真实数据库里留下 `seen` 记录：
+
 ```bash
-cd api && uv run uvicorn app.main:app --port 8020 &
+cd api && ENGLISH_HOME="$TEMP/english-api-check" uv run python -c "from app.db import init_db; init_db()"
+cd api && ENGLISH_HOME="$TEMP/english-api-check" uv run uvicorn app.main:app --port 8020 &
+```
+
+（临时库里没有词条，`/next` 会返回 `finished: true`——这正好验证了空词库不会 500。要验证有词的路径，把 `ENGLISH_HOME` 指向 `%APPDATA%\english-app` 的副本。）
+
+```bash
 curl -s -X POST http://127.0.0.1:8020/api/immersion/next -H "Content-Type: application/json" -d '{"wordbook":"cet6"}'
 curl -s "http://127.0.0.1:8020/api/immersion/stats?wordbook=cet6"
 ```
 
-Expected: 第一条返回一个 cet6 词 + `finished: false`；第二条 `{total: 5407, mastered: 0, remaining: 5407}` 量级的数字。验证完关掉进程。
+Expected: `/next` 返回 `{"word": null, "progress": {...}, "finished": true}`，不报 500；`/stats` 返回三个整数。验证完关掉进程并删除临时目录。
 
 - [ ] **Step 5: 提交**
 
@@ -784,9 +792,15 @@ export const useImmersionStore = defineStore('immersion', () => {
 })
 ```
 
-- [ ] **Step 3: 设置里加上限**
+- [ ] **Step 3: 设置里加上限，并接进学习计划请求**
 
 `web/src/stores/settings.ts`：加 `const dailyReviewLimit = ref(100)`；读取时 `if (typeof parsed.dailyReviewLimit === 'number') ...`；watch 数组和写入的 JSON 都带上它；return 里导出。
+
+`web/src/stores/study.ts`：`loadPlan` 和 `startSession` 的参数里加 `reviewLimit`，请求时传 `review_limit`。
+
+`web/src/views/HomeView.vue` 与 `web/src/views/StudyView.vue`：调用 `loadPlan` / `startSession` 时带上 `reviewLimit: settings.dailyReviewLimit`。
+
+> 这一步不能省：只加设置项而不把它传进 `/study/plan`，验收标准第 7 条（设 10 张就只出 10 张）会失败。
 
 - [ ] **Step 4: 类型检查**
 
