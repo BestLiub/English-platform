@@ -8,8 +8,7 @@ const router = createRouter({
     { path: '/study/immersion', name: 'immersion', component: () => import('@/views/ImmersionView.vue'), meta: { title: '沉浸模式' } },
     { path: '/library', name: 'library', component: () => import('@/views/LibraryView.vue'), meta: { title: '精读' } },
     { path: '/read/:id', name: 'reader', component: () => import('@/views/ReaderView.vue'), meta: { title: '阅读' } },
-    { path: '/stats', name: 'stats', component: () => import('@/views/StatsView.vue'), meta: { title: '统计' } },
-    { path: '/settings', name: 'settings', component: () => import('@/views/SettingsView.vue'), meta: { title: '设置' } }
+    { path: '/profile', name: 'profile', component: () => import('@/views/ProfileView.vue'), meta: { title: '个人' } }
   ]
 })
 
