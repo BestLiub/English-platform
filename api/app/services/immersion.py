@@ -47,9 +47,15 @@ def draw(db: Session, wordbook: str, user_id: int = 1) -> Word | None:
     window = repeat_window(remaining)
     word = None
     if window:
+        # 只算当前词库里还没掌握的词，别的词库和已掌握的行不占窗口名额
         recent = (
             select(ImmersionWord.word_id)
-            .where(ImmersionWord.user_id == user_id)
+            .join(Word, Word.id == ImmersionWord.word_id)
+            .where(
+                ImmersionWord.user_id == user_id,
+                ImmersionWord.status != "mastered",
+                _book_filter(wordbook),
+            )
             .order_by(ImmersionWord.last_seen_at.desc())
             .limit(window)
         )
