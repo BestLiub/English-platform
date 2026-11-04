@@ -160,7 +160,9 @@ onUnmounted(() => {
 
     <!-- 卡片 -->
     <template v-else>
+      <!-- key 绑在 word_id 上：换词时整个重建卡片，避免背面带着新词的释义翻回正面 -->
       <WordCard
+        :key="immersion.word?.word_id ?? 'empty'"
         :item="immersion.word"
         :revealed="revealed"
         :show-badge="false"

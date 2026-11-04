@@ -141,7 +141,13 @@ onUnmounted(() => {
 
     <!-- 卡片 -->
     <template v-else>
-      <WordCard :item="study.current" :revealed="study.revealed" @flip="flip" />
+      <!-- key 绑在 word_id 上：换词时整个重建卡片，避免背面带着新词的释义翻回正面 -->
+      <WordCard
+        :key="study.current?.word_id ?? 'empty'"
+        :item="study.current"
+        :revealed="study.revealed"
+        @flip="flip"
+      />
 
       <div class="mt-6">
         <!-- 还没看释义：要么看，要么我认识直接跳过 -->
