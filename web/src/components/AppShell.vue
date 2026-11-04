@@ -44,7 +44,7 @@ const activeName = computed(() => {
       </nav>
 
       <div class="hidden border-t px-6 py-4 text-[11px] leading-relaxed text-gray-400 md:block">
-        <div>v1.0.0 · 本地版</div>
+        <div>v1.0.1 · 本地版</div>
         <div class="mt-1">数据保存在本机</div>
       </div>
     </aside>

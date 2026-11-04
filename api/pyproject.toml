@@ -1,6 +1,6 @@
 [project]
 name = "english-api"
-version = "1.0.0"
+version = "1.0.1"
 description = "English 本地版后端"
 requires-python = ">=3.10"
 dependencies = [
